@@ -1,0 +1,63 @@
+﻿@{
+    ViewBag.Title = "Sensor data details";
+}
+
+<h2>Sensor data details for sensorid @ViewBag.sensorid</h2>
+
+<form id="dataform">
+    <h3>Enter sensor details</h3><br>
+    Start date and time (yyyy-mm-ddThh:mm:ss): <input type="text" name="startdate" id="startdate" /><br>
+    End date and time (yyyy-mm-ddThh:mm:ss): <input type="text" name="enddate" id="enddate" /><br>
+    Sensor field: @Html.DropDownList("field", (IEnumerable<SelectListItem>) ViewBag.sensorfields)<br>
+    <input type="button" value="Get data" onclick="getData()" />
+</form>
+    
+<div id="chart"></div>
+
+@section scripts {
+    <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+    <script type="text/javascript">
+
+        google.load("visualization", "1", { packages: ["corechart"] });
+
+        function getData() {
+            var form = document.getElementById("dataform");
+            var startdate = form.startdate.value;
+            var enddate = form.enddate.value;
+
+            var idAndDatafield = form.field.value.split(",");
+            var id = idAndDatafield[0];
+            var datafield = idAndDatafield[1];
+
+            $.ajax({
+                url: '@Url.Action("FetchSpecificData")',
+                type: 'GET',
+                data: { installationID: "@ViewBag.installationid", sensorGroupID: "@ViewBag.sensorgroupid", sensorID: id, field: datafield, start: startdate, end: enddate },
+                cache: false,
+                datatype: 'json',
+                success: function (data) {
+                    var dataArray = new Array(new Array("Timestamp", datafield));
+                    $.each(data, function (key, value) {
+                        dataArray.push(new Array(key, parseInt(value)));
+                    });
+                    drawChart(dataArray, id);
+                }
+            });
+        }
+
+        function drawChart(dataArray, id) {
+            var data = google.visualization.arrayToDataTable(dataArray);
+
+            var options = {
+                title: 'Data from sensor with id ' + id
+            };
+
+            var chart = new google.visualization.LineChart(document.getElementById('chart'));
+            chart.draw(data, options);
+        }
+    </script>
+}
+
+<div>
+    @Html.ActionLink("Back to groundplan", "Module", new { imageid = ViewBag.image, floor = ViewBag.sensorgroupid })
+</div>

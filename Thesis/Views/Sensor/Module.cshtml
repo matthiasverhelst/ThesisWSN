@@ -1,0 +1,233 @@
+﻿@{
+    ViewBag.Title = "Module";
+}
+
+<h2>@ViewBag.heading</h2>
+
+<div class="sensordetails">
+    <div id="addsensor">
+        Click on a sensor for its most recent information<br /><br />
+        <button onclick="createSensorNode()">Create new sensor node</button>
+        <button onclick="createType()">Create new sensor type</button>
+    </div>
+
+    <div id="sensordetails"></div>
+</div>
+
+<div id="groundplan"></div>
+
+<div id="createsensornodecontainer" class="createcontainer">
+    <form id="createsensornodeform" class="createform">
+        <h3>Enter sensor node details</h3><br>
+        <input type="hidden" name="location" id="xycoord" />
+        Name: <input type="text" name="name" id="sensornodename" /><br><br>
+        Description: <input type="text" name="description" id="sensornodedescription" /><br><br>
+        <input type="button" value="OK" onclick="makeSensorNode()" />
+        <input type="button" value="Cancel" onclick="makeSensorNode(this.value)" />
+    </form>
+</div>
+
+<div id="createsensorcontainer" class="createcontainer">
+    <form id="createsensorform" class="createform">
+        <h3>Enter sensor details</h3><br>
+        <input type="hidden" name="sensorgroupid" id="sensorgroupid" />
+        Name: <input type="text" name="name" id="sensorname" /><br><br>
+        Frequency: <input type="number" min="0" name="frequency" id="sensorfrequency" /><br><br>
+        Description: <input type="text" name="description" id="sensordescription" /><br><br>
+        Sensor Type: @Html.DropDownList("sensortype", (IEnumerable<SelectListItem>) ViewBag.sensortypes)<br><br>
+        <input type="button" value="OK" onclick="makeSensor()" />
+        <input type="button" value="Cancel" onclick="makeSensor(this.value)" />
+    </form>
+</div>
+
+<div id="createtypecontainer" class="createcontainer">
+    <form id="createtypeform" class="createform">
+        <h3>Enter sensortype details</h3><br>
+        Name: <input type="text" name="name" id="typename" /><br><br>
+        Variable being measured: <input type="text" name="field" id="typefield" /><br><br>
+        <input type="button" value="OK" onclick="makeType()" />
+        <input type="button" value="Cancel" onclick="makeType(this.value)" />
+    </form>
+</div>
+
+
+
+@section scripts {
+    <script type="text/javascript" src="~/Scripts/raphael-min.js"></script>
+    <script type="text/javascript">
+        var paper = Raphael("groundplan", 600, 600);
+        var a = paper.image("../Images/Vesalius_" + @ViewBag.image + "_2004-Model.svg", 0, 0, 600, 600);
+        var getpos;
+
+        $.ajax({
+            url: '@Url.Action("FetchAllSensors")',
+            type: 'GET',
+            data: {installationID: "@ViewBag.installation"},
+            cache: false,
+            datatype: 'json',
+            success: function (data) {
+                $.each(data, function (i, sensornode) {
+                    showSensor(sensornode);
+                });
+            }
+        });
+
+        function showSensor(sensornode) {
+            var loc = sensornode.location.split(",");
+
+            var c = paper.circle(loc[0], loc[1], 5);
+            c.attr({ fill: "green" });
+            c.click(function () {
+                $("#sensordetails").css("display", "inline-block");
+                $("#sensordetails").html("<h2>Node Name: " + sensornode.name + "</h2><br>");
+                $("#sensordetails").append("<h3>Sensornode ID: " + sensornode.id + "</h3><br>");
+                $("#sensordetails").append("<h3>Description: " + sensornode.description + "</h3><br>");
+                $("#sensordetails").append("<h2>Sensors:</h2><br>");
+
+                $.each(sensornode.sensors, function (i, sensor) {
+                    $("#sensordetails").append("<h3>Sensorname: " + sensor.name + "</h3><br>");
+                    $("#sensordetails").append("Sensor ID: " + sensor.id + "<br>");
+                    $("#sensordetails").append("Description: " + sensor.description + "<br>");
+                    $.each(sensor.field, function (key, value) {
+                        $("#sensordetails").append(key + ": " + value + "<br>");
+                    });
+                });
+
+                $("#sensordetails").append('<button onclick="createSensor(' + sensornode.id + ')">Create new sensor for this node</button>');
+
+                var link = '@Url.Action("SensorDetails", "Sensor", new { sensorid = "-1", floorid = ViewBag.installation })';
+                link = link.replace("-1", sensornode.id);
+                var toAppend = '<input type="button" value="Advanced data" onclick="location.href="' + link + '"/>';
+                $("#sensordetails").append('<br><a href="/Sensor/Sensordetails/' + @ViewBag.image + '?sensorgroupid=' + sensornode.id + '&floorid=' + @ViewBag.installation + '">Advanced data for this sensor</a>');
+            });
+        }
+
+        function createSensorNode() {
+            $('#createtypeform').css("display", "none");
+            $("#createtypecontainer").css("z-index", "-1");
+            $('#createsensorform').css("display", "none");
+            $("#createsensorcontainer").css("z-index", "-1");
+            alert("Please determine the position of the sensor by clicking on the groundplan", "Choose position");
+            getpos = function (evt) {
+                a.unclick(getpos);
+                promptForSensorNodeValues(evt.pageX - $('#groundplan').offset().left, evt.pageY - $('#groundplan').offset().top);
+            };
+            a.click(getpos);
+        }
+
+        function createSensor(sensorgroupid) {
+            $('#createtypeform').css("display", "none");
+            $("#createtypecontainer").css("z-index", "-1");
+            $('#createsensornodeform').css("display", "none");
+            $("#createsensornodecontainer").css("z-index", "-1");
+            $('#createsensorform').css("display", "block");
+            $("#createsensorcontainer").css("z-index", "1000");
+            $("#sensorgroupid").val(sensorgroupid);
+        }
+
+        function createType() {
+            a.unclick(getpos);
+            $("#typename").val("");
+            $("#typefield").val("");
+            $('#createsensorform').css("display", "none");
+            $("#createsensorcontainer").css("z-index", "-1");
+            $('#createsensornodeform').css("display", "none");
+            $("#createsensornodecontainer").css("z-index", "-1");
+            $("#createtypecontainer").css("z-index", "1000");
+            $('#createtypeform').css("display", "block");
+        }
+
+
+        function promptForSensorNodeValues(x, y) {
+            $("#xycoord").val(x + "," + y);
+            $("#sensornodename").val("");
+            $("#sensordescription").val("");
+            $("#createsensornodecontainer").css("z-index", "1000");
+            $('#createsensornodeform').css("display", "block");
+        }
+
+        function makeSensorNode(arg) {
+            if("Cancel" == arg) {
+                $('#createsensornodeform').css("display", "none");
+                $("#createsensornodecontainer").css("z-index", "-1");
+                return;
+            }
+            else {
+                var form = document.getElementById("createsensornodeform");
+                var sensornodename = form.name.value;
+                var sensorlocation = form.location.value;
+                var sensordescription = form.description.value;
+                $('#createsensornodeform').css("display", "none");
+                $("#createsensornodecontainer").css("z-index", "-1");
+
+                $.ajax({
+                    url: '@Url.Action("CreateSensorNode")',
+                    type: 'POST',
+                    data: { installationID: "@ViewBag.installation", name: sensornodename, location: sensorlocation, description: sensordescription },
+                    cache: false,
+                    success: function () {
+                        alert("Sensornode made successfully!");
+                    }
+                });
+            }
+        }
+
+        function makeSensor(arg) {
+            if ("Cancel" == arg) {
+                $('#createsensorform').css("display", "none");
+                $("#createsensorcontainer").css("z-index", "-1");
+                return;
+            }
+            else {
+                var form = document.getElementById("createsensorform");
+                var sensorgroupid = parseInt(form.sensorgroupid.value);
+                var sensorname = form.name.value;
+                var sensorfrequency = parseInt(form.frequency.value);
+                var sensordescription = form.description.value;
+                var sensordataname = form.sensortype.value;
+                $('#createsensorform').css("display", "none");
+                $("#createsensorcontainer").css("z-index", "-1");
+
+                $.ajax({
+                    url: '@Url.Action("CreateSensor")',
+                    type: 'POST',
+                    data: { sensorgroupID: sensorgroupid, name: sensorname, frequency: sensorfrequency, description: sensordescription, dataname: sensordataname },
+                    cache: false,
+                    success: function () {
+                        alert("Sensor made successfully!");
+                    }
+                });
+            }
+        }
+
+        function makeType(arg) {
+            if ("Cancel" == arg) {
+                $('#createtypeform').css("display", "none");
+                $("#createtypecontainer").css("z-index", "-1");
+                return;
+            }
+            else {
+                var form = document.getElementById("createtypeform");
+                var typename = form.name.value;
+                var typefield = form.field.value;
+                $('#createtypeform').css("display", "none");
+                $("#createtypecontainer").css("z-index", "-1");
+
+                $.ajax({
+                    url: '@Url.Action("CreateSensorType")',
+                    type: 'POST',
+                    data: { name: typename, field: typefield },
+                    cache: false,
+                    success: function () {
+                        alert("Sensor type made successfully!");
+                    }
+                });
+            }
+        }
+
+    </script>
+}
+
+<div>
+    @Html.ActionLink("Back to Index", "Index")
+</div>
