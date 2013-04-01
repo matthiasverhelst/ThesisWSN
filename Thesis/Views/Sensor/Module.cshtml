@@ -82,6 +82,11 @@
                 $("#sensordetails").html("<h2>Node Name: " + sensornode.name + "</h2><br>");
                 $("#sensordetails").append("<h3>Sensornode ID: " + sensornode.id + "</h3><br>");
                 $("#sensordetails").append("<h3>Description: " + sensornode.description + "</h3><br>");
+                $("#sensordetails").append('<button onclick="createSensor(' + sensornode.id + ')">Create new sensor for this node</button><br>');
+                var link = '@Url.Action("SensorDetails", "Sensor", new { sensorid = "-1", floorid = ViewBag.installation })';
+                link = link.replace("-1", sensornode.id);
+                var toAppend = '<input type="button" value="Advanced data" onclick="location.href="' + link + '"/>';
+                $("#sensordetails").append('<br><a href="/Sensor/Sensordetails/' + @ViewBag.image + '?sensorgroupid=' + sensornode.id + '&floorid=' + @ViewBag.installation + '">Advanced data for this sensor node</a>');
                 $("#sensordetails").append("<h2>Sensors:</h2><br>");
 
                 $.each(sensornode.sensors, function (i, sensor) {
@@ -92,13 +97,6 @@
                         $("#sensordetails").append(key + ": " + value + "<br>");
                     });
                 });
-
-                $("#sensordetails").append('<button onclick="createSensor(' + sensornode.id + ')">Create new sensor for this node</button>');
-
-                var link = '@Url.Action("SensorDetails", "Sensor", new { sensorid = "-1", floorid = ViewBag.installation })';
-                link = link.replace("-1", sensornode.id);
-                var toAppend = '<input type="button" value="Advanced data" onclick="location.href="' + link + '"/>';
-                $("#sensordetails").append('<br><a href="/Sensor/Sensordetails/' + @ViewBag.image + '?sensorgroupid=' + sensornode.id + '&floorid=' + @ViewBag.installation + '">Advanced data for this sensor</a>');
             });
         }
 
