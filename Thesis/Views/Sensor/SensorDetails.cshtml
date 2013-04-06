@@ -46,14 +46,18 @@
         }
 
         function drawChart(dataArray, id) {
-            var data = google.visualization.arrayToDataTable(dataArray);
+            if (dataArray.length > 2) {
+                var data = google.visualization.arrayToDataTable(dataArray);
 
-            var options = {
-                title: 'Data from sensor with id ' + id
-            };
+                var options = {
+                    title: 'Data from sensor with ID ' + id,
+                    height: 300
+                };
 
-            var chart = new google.visualization.LineChart(document.getElementById('chart'));
-            chart.draw(data, options);
+                var chart = new google.visualization.LineChart(document.getElementById('chart'));
+                chart.draw(data, options);
+            }
+            else $("#chart").text("No data has been recorded for the sensor with ID " + id);
         }
     </script>
 }

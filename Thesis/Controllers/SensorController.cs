@@ -394,7 +394,13 @@ namespace Thesis.Controllers
                 XmlNode fieldvaluenode = entry.SelectSingleNode("./*[local-name()='" + field + "']");
                 XmlNode timestampnode = entry.SelectSingleNode("./*[local-name()='timestamp']");
                 if(fieldvaluenode != null)
-                    datalist.Add(timestampnode.InnerText, fieldvaluenode.InnerText);
+                {
+                    try
+                    {
+                        datalist.Add(timestampnode.InnerText, fieldvaluenode.InnerText);
+                    }
+                    catch (ArgumentException) { /* timestamp already exists, don't add a new one with the same timestamp */};
+                }
             }
 
             JsonResult json = Json(datalist, JsonRequestBehavior.AllowGet);
