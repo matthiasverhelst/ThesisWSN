@@ -4,6 +4,8 @@ using System.Data;
 using System.Data.Entity;
 using System.IO;
 using System.Linq;
+using System.Net;
+using System.Text;
 using System.Web;
 using System.Web.Mvc;
 using System.Xml;
@@ -233,16 +235,9 @@ namespace Thesis.Controllers
                 XmlDocument doc2 = new XmlDocument();
                 doc2.LoadXml(xmlSingleType);
                 XmlNode type = doc2.DocumentElement;
-                XmlNodeList fields = type.ChildNodes;
-                String fieldstring = "";
-                foreach (XmlNode node in fields)
-                {
-                    if(node.Name != "timestamp" && node.Name != "utimestamp")
-                        fieldstring += node.Name + ", ";
-                }
-                fieldstring = fieldstring.Remove(fieldstring.Length - 2);
+                
                 SelectListItem element = new SelectListItem();
-                element.Text = type.Name + " (" + fieldstring + ")";
+                element.Text = type.Name;
                 element.Value = name.InnerText;
                 elements.Add(element);
             }
@@ -290,7 +285,7 @@ namespace Thesis.Controllers
         }
 
         [HttpPost]
-        public void CreateSensorNode(int installationID, String name, String location, String description)
+        public void CreateSensorNode(int installationID, String name, String location, String zigbeeAddress, String description)
         {
             XDocument postdata = new XDocument(
                 new XDeclaration("1.0", "utf-16", null),
@@ -301,7 +296,7 @@ namespace Thesis.Controllers
                     new XElement("id", "0"),
                     new XElement("name", name),
                     new XElement("description", description),
-                    new XElement("inuse", "True"),
+                    new XElement("inuse", "False"),
                     new XElement("infoname", ""),
                     new XElement("location", location)
                 )
@@ -310,11 +305,26 @@ namespace Thesis.Controllers
             IpsumClient client = new IpsumClient("http://ipsum.groept.be", "/", "ad37d673-8803-4497-99dc-97f6baf91d5e");
             client.Authenticate("mverhelst", "mverhelst");
 
-            client.Custom("addGroup/{token}/{code}", postdata.Declaration.ToString() + postdata.ToString());
+            String response = client.Custom("addGroup/{token}/{code}", postdata.Declaration.ToString() + postdata.ToString());
+
+            XmlDocument doc = new XmlDocument();
+            doc.LoadXml(response);
+            XmlNode idNode = doc.DocumentElement.SelectSingleNode("//*[local-name()='id']");
+            String sensorGroupID = idNode.InnerText;
+
+            postdata = new XDocument(
+                new XElement("addNode",
+                    new XElement("installationID", installationID),
+                    new XElement("sensorGroupID", sensorGroupID),
+                    new XElement("zigbeeAddress", zigbeeAddress)
+                )
+            );
+
+            response = ContactWebService("/addNode/", postdata.Declaration.ToString() + postdata.ToString());
         }
 
         [HttpPost]
-        public void CreateSensor(int sensorgroupID, String name, int frequency, String description, String dataname)
+        public void CreateSensor(int sensorgroupID, String name, int frequency, String description, String dataname, String sensorType)
         {
             XDocument postdata = new XDocument(
                 new XDeclaration("1.0", "utf-16", "yes"),
@@ -325,7 +335,7 @@ namespace Thesis.Controllers
                     new XElement("id", "0"),
                     new XElement("name", name),
                     new XElement("description", description),
-                    new XElement("inuse", "True"),
+                    new XElement("inuse", "False"),
                     new XElement("infoname", ""),
                     new XElement("location", "")
                 )
@@ -334,7 +344,22 @@ namespace Thesis.Controllers
             IpsumClient client = new IpsumClient("http://ipsum.groept.be", "/", "ad37d673-8803-4497-99dc-97f6baf91d5e");
             client.Authenticate("mverhelst", "mverhelst");
 
-            client.Custom("addSensor/{token}/{code}", postdata.ToString());
+            String response = client.Custom("addSensor/{token}/{code}", postdata.ToString());
+
+            XmlDocument doc = new XmlDocument();
+            doc.LoadXml(response);
+            XmlNode idNode = doc.DocumentElement.SelectSingleNode("//*[local-name()='id']");
+            String sensorID = idNode.InnerText;
+
+            postdata = new XDocument(
+                new XElement("addSensor",
+                    new XElement("sensorGroupID", sensorgroupID),
+                    new XElement("sensorID", sensorID),
+                    new XElement("sensorType", sensorType)
+                )
+            );
+
+            response = ContactWebService("/addSensor/", postdata.Declaration.ToString() + postdata.ToString());
         }
 
         [HttpPost]
@@ -405,6 +430,60 @@ namespace Thesis.Controllers
 
             JsonResult json = Json(datalist, JsonRequestBehavior.AllowGet);
             return json;
+        }
+
+        public void FetchDirectSensorData(int sensorGroupID, int sensorID)
+        {
+            XDocument postdata = new XDocument(
+                new XElement("requestData",
+                    new XElement("sensorGroupID", sensorGroupID),
+                    new XElement("sensor", sensorID)
+                )
+            );
+
+            String response = ContactWebService("/requestData/", postdata.Declaration.ToString() + postdata.ToString());
+        }
+
+        public void ChangeFrequency(int sensorGroupID, int sensorID, int newFrequency)
+        {
+            XDocument postdata = new XDocument(
+                new XElement("changeFrequency",
+                    new XElement("sensorGroupID", sensorGroupID),
+                    new XElement("sensor", sensorID),
+                    new XElement("frequency", newFrequency)
+                )
+            );
+
+            String response = ContactWebService("/changeFrequency/", postdata.Declaration.ToString() + postdata.ToString());
+        }
+
+        public String ContactWebService(String url, String xml = null)
+        {
+            // Create the web request  
+            HttpWebRequest request = WebRequest.Create(url) as HttpWebRequest;
+            if (xml == null)
+                request.Method = "GET";
+            else
+            {
+                request.Method = "POST";
+                request.ContentType = "application/xml";
+                string data = xml;
+                byte[] byteData = UTF8Encoding.UTF8.GetBytes(data.ToString());
+                using (Stream postStream = request.GetRequestStream())
+                {
+                    postStream.Write(byteData, 0, byteData.Length);
+                }
+            }
+            // Get response  
+            string resp = "";
+            using (HttpWebResponse response = request.GetResponse() as HttpWebResponse)
+            {
+                // Get the response stream  
+                StreamReader reader = new StreamReader(response.GetResponseStream());
+                resp = reader.ReadToEnd();
+                reader.Dispose();
+            }
+            return resp;
         }
 
         public class IpsumSensorNode

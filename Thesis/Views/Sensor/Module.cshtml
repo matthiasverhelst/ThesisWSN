@@ -21,6 +21,7 @@
         <h3>Enter sensor node details</h3><br>
         <input type="hidden" name="location" id="xycoord" />
         Name: <input type="text" name="name" id="sensornodename" /><br><br>
+        Zigbee address: <input type="text" name="zigbeeaddress" id="sensornodezigbeeaddress" /><br><br>
         Description: <input type="text" name="description" id="sensornodedescription" /><br><br>
         <input type="button" value="OK" onclick="makeSensorNode()" />
         <input type="button" value="Cancel" onclick="makeSensorNode(this.value)" />
@@ -154,6 +155,7 @@
                 var form = document.getElementById("createsensornodeform");
                 var sensornodename = form.name.value;
                 var sensorlocation = form.location.value;
+                var sensorzigbeeaddress = form.zigbeeaddress.value
                 var sensordescription = form.description.value;
                 $('#createsensornodeform').css("display", "none");
                 $("#createsensornodecontainer").css("z-index", "-1");
@@ -161,7 +163,7 @@
                 $.ajax({
                     url: '@Url.Action("CreateSensorNode")',
                     type: 'POST',
-                    data: { installationID: "@ViewBag.installation", name: sensornodename, location: sensorlocation, description: sensordescription },
+                    data: { installationID: "@ViewBag.installation", name: sensornodename, location: sensorlocation, zigbeeAddress: sensorzigbeeaddress, description: sensordescription },
                     cache: false,
                     success: function () {
                         alert("Sensornode made successfully!");
