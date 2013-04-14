@@ -17,10 +17,6 @@ namespace Thesis.Controllers
 {
     public class SensorController : Controller
     {
-        private SensorDBContext db = new SensorDBContext();
-
-        //
-        // GET: /Sensor/
 
         public ActionResult Index()
         {
@@ -76,7 +72,7 @@ namespace Thesis.Controllers
         {
             return View();
         }
-
+        /*
         [HttpPost]
         public ActionResult Create(Sensor sensor)
         {
@@ -89,7 +85,7 @@ namespace Thesis.Controllers
 
             return View(sensor);
         }
-
+        
         public ActionResult Edit(int id = 0)
         {
             Sensor sensor = db.Sensors.Find(id);
@@ -99,7 +95,7 @@ namespace Thesis.Controllers
             }
             return View(sensor);
         }
-
+        
         [HttpPost]
         public ActionResult Edit(Sensor sensor)
         {
@@ -111,7 +107,7 @@ namespace Thesis.Controllers
             }
             return View(sensor);
         }
-
+        
         public ActionResult Delete(int id = 0)
         {
             Sensor sensor = db.Sensors.Find(id);
@@ -130,7 +126,7 @@ namespace Thesis.Controllers
             db.SaveChanges();
             return RedirectToAction("ModuleDetails");
         }
-
+        */
         public JsonResult FetchAllSensors(int installationID)
         {
             IpsumClient client = new IpsumClient("http://ipsum.groept.be", "/", "ad37d673-8803-4497-99dc-97f6baf91d5e");
@@ -320,7 +316,7 @@ namespace Thesis.Controllers
                 )
             );
 
-            response = ContactWebService("/addNode/", postdata.Declaration.ToString() + postdata.ToString());
+            response = ContactWebService("/addNode/", postdata.ToString());
         }
 
         [HttpPost]
@@ -359,7 +355,7 @@ namespace Thesis.Controllers
                 )
             );
 
-            response = ContactWebService("/addSensor/", postdata.Declaration.ToString() + postdata.ToString());
+            response = ContactWebService("/addSensor/", postdata.ToString());
         }
 
         [HttpPost]
@@ -441,7 +437,7 @@ namespace Thesis.Controllers
                 )
             );
 
-            String response = ContactWebService("/requestData/", postdata.Declaration.ToString() + postdata.ToString());
+            String response = ContactWebService("/requestData/", postdata.ToString());
         }
 
         public void ChangeFrequency(int sensorGroupID, int sensorID, int newFrequency)
@@ -454,13 +450,14 @@ namespace Thesis.Controllers
                 )
             );
 
-            String response = ContactWebService("/changeFrequency/", postdata.Declaration.ToString() + postdata.ToString());
+            String response = ContactWebService("/changeFrequency/", postdata.ToString());
         }
 
         public String ContactWebService(String url, String xml = null)
         {
             // Create the web request  
             HttpWebRequest request = WebRequest.Create(url) as HttpWebRequest;
+            request.Timeout = 20000;
             if (xml == null)
                 request.Method = "GET";
             else
@@ -475,7 +472,7 @@ namespace Thesis.Controllers
                 }
             }
             // Get response  
-            string resp = "";
+            String resp = "";
             using (HttpWebResponse response = request.GetResponse() as HttpWebResponse)
             {
                 // Get the response stream  
