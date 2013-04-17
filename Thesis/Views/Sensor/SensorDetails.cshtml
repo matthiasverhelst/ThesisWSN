@@ -25,14 +25,13 @@
             var startdate = form.startdate.value;
             var enddate = form.enddate.value;
 
-            var idAndDatafield = form.field.value.split(",");
-            var id = idAndDatafield[0];
-            var datafield = idAndDatafield[1];
+            var id = form.field.value
+            var datafield = $("#field").text();
 
             $.ajax({
                 url: '@Url.Action("FetchSpecificData")',
                 type: 'GET',
-                data: { installationID: "@ViewBag.installationid", sensorGroupID: "@ViewBag.sensorgroupid", sensorID: id, field: datafield, start: startdate, end: enddate },
+                data: { installationID: "@ViewBag.installationid", sensorGroupID: "@ViewBag.sensorgroupid", sensorID: id, field: "value", start: startdate, end: enddate },
                 cache: false,
                 datatype: 'json',
                 success: function (data) {
@@ -63,5 +62,6 @@
 }
 
 <div>
-    @Html.ActionLink("Back to groundplan", "Module", new { imageid = ViewBag.image, floor = ViewBag.sensorgroupid })
+    <br>
+    @Html.ActionLink("Back to groundplan", "Module", new { imageid = ViewBag.image, floor = ViewBag.installationid })
 </div>

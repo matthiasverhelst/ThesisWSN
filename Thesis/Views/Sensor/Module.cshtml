@@ -80,24 +80,30 @@
             c.attr({ fill: "green" });
             c.click(function () {
                 $("#sensordetails").css("display", "inline-block");
-                $("#sensordetails").html("<h2>Node Name: " + sensornode.name + "</h2><br>");
-                $("#sensordetails").append("<h3>Sensornode ID: " + sensornode.id + "</h3><br>");
+                $("#sensordetails").html("<h2>Sensornode name: " + sensornode.name + "</h2><br>");
+                $("#sensordetails").append("<h3>Sensornode ID: " + sensornode.id + "<\h3>");
                 $("#sensordetails").append("<h3>Description: " + sensornode.description + "</h3><br>");
-                $("#sensordetails").append('<button onclick="createSensor(' + sensornode.id + ')">Create new sensor for this node</button><br>');
                 var link = '@Url.Action("SensorDetails", "Sensor", new { sensorid = "-1", floorid = ViewBag.installation })';
                 link = link.replace("-1", sensornode.id);
                 var toAppend = '<input type="button" value="Advanced data" onclick="location.href="' + link + '"/>';
-                $("#sensordetails").append('<br><a href="/Sensor/Sensordetails/' + @ViewBag.image + '?sensorgroupid=' + sensornode.id + '&floorid=' + @ViewBag.installation + '">Advanced data for this sensornode</a>');
                 $("#sensordetails").append("<h2>Sensors:</h2><br>");
 
-                $.each(sensornode.sensors, function (i, sensor) {
-                    $("#sensordetails").append("<h3>Sensorname: " + sensor.name + "</h3><br>");
-                    $("#sensordetails").append("Sensor ID: " + sensor.id + "<br>");
-                    $("#sensordetails").append("Description: " + sensor.description + "<br>");
-                    $.each(sensor.field, function (key, value) {
-                        $("#sensordetails").append(key + ": " + value + "<br>");
+                if (sensornode.sensors.length == 0) {
+                    $("#sensordetails").append("No sensors added to this node");
+                    $("#sensordetails").append('<br><button onclick="createSensor(' + sensornode.id + ')">Create new sensor for this node</button><br>');
+                }
+                else {
+                    $("#sensordetails").append('<button onclick="createSensor(' + sensornode.id + ')">Create new sensor for this node</button><br>');
+                    $("#sensordetails").append('<br><a href="/Sensor/Sensordetails/' + @ViewBag.image + '?sensorgroupid=' + sensornode.id + '&floorid=' + @ViewBag.installation + '">Advanced sensor data for this node</a>');
+                    $.each(sensornode.sensors, function (i, sensor) {
+                        $("#sensordetails").append("<h3>Sensorname: " + sensor.name + "</h3><br>");
+                        $("#sensordetails").append("Sensor ID: " + sensor.id + "<br>");
+                        $("#sensordetails").append("Description: " + sensor.description + "<br>");
+                        $("#sensordetails").append(sensor.type + ": " + sensor.lastvalue + "<br>");
+                        if (!(sensor.timestamp == ""))
+                            $("#sensordetails").append("Timestamp: " + sensor.timestamp + "<br>");
                     });
-                });
+                }
             });
         }
 
@@ -185,13 +191,14 @@
                 var sensorfrequency = parseInt(form.frequency.value);
                 var sensordescription = form.description.value;
                 var sensordataname = form.sensortype.value;
+                var sensortype = $("#sensortype option:selected").text();
                 $('#createsensorform').css("display", "none");
                 $("#createsensorcontainer").css("z-index", "-1");
 
                 $.ajax({
                     url: '@Url.Action("CreateSensor")',
                     type: 'POST',
-                    data: { sensorgroupID: sensorgroupid, name: sensorname, frequency: sensorfrequency, description: sensordescription, dataname: sensordataname },
+                    data: { sensorgroupID: sensorgroupid, name: sensorname, frequency: sensorfrequency, description: sensordescription, dataname: sensordataname, sensorType: sensortype },
                     cache: false,
                     success: function () {
                         alert("Sensor made successfully!");

@@ -160,7 +160,6 @@ namespace Thesis.Controllers
                 String xmlChildSensors = client.LoadChildren(sensorgroupdest);
                 List<IpsumSensor> sensors = new List<IpsumSensor>();
 
-                XmlDocument xmlreader2 = new XmlDocument();
                 xmlreader.LoadXml(xmlChildSensors);
                 XmlNodeList xmlsensors = xmlreader.DocumentElement.SelectNodes("//*[local-name()='Sensor']");
 
@@ -180,27 +179,44 @@ namespace Thesis.Controllers
                     XmlNode descriptionsensor = xmlsensor.SelectSingleNode("./*[local-name()='description']");
                     sensor.description = descriptionsensor.InnerText;
 
-                    sensor.field = new Dictionary<String, String>();
+                    XmlNode datanamesensor = xmlsensor.SelectSingleNode("./*[local-name()='dataname']");
+
+                    String xmlsensortype = client.Custom("objects/{token}/{code}?filter=" + datanamesensor.InnerText);
+                    xmlreader.LoadXml(xmlsensortype);
+                    XmlNode sensortypenamenode = xmlreader.SelectSingleNode("//*[local-name()='name']");
+                    sensor.type = sensortypenamenode.InnerText;
 
                     Destination sensordest = new Destination(21, installationID, sensornode.id, sensor.id);
-                    String xmlsensorvalue = client.Calculation(sensordest);
-
-                    XmlDocument xmlreader3 = new XmlDocument();
-                    xmlreader3.LoadXml(xmlsensorvalue);
-
-                    XmlNode entries = xmlreader3.DocumentElement.SelectSingleNode("//*[local-name()='entry']");
-                    if (entries != null)
+                    String xmlsensorvalue = "";
+                    try
                     {
-                        XmlNodeList values = entries.ChildNodes;
-
-                        foreach (XmlNode value in values)
-                        {
-                            if (value != null)
-                                sensor.field.Add(value.Name.First().ToString().ToUpper() + String.Join("", value.Name.Skip(1)), value.InnerText);
-                        }
-
-                        sensors.Add(sensor);
+                        xmlsensorvalue = client.Calculation(sensordest);
                     }
+                    catch (WebException e)
+                    {
+                        sensor.lastvalue = "No data recorded yet";
+                        sensor.timestamp = "";
+                        sensors.Add(sensor);
+                        break;
+                    }
+
+                    xmlreader.LoadXml(xmlsensorvalue);
+
+                    XmlNode entry = xmlreader.DocumentElement.SelectSingleNode("//*[local-name()='entry']");
+                    if (entry != null)
+                    {
+                        XmlNode value = entry.FirstChild;
+                        sensor.lastvalue = value.InnerText;
+                        XmlNode timestamp = entry.SelectSingleNode("//*[local-name()='timestamp']");
+                        sensor.timestamp = timestamp.InnerText;
+                    }
+                    else
+                    {
+                        sensor.lastvalue = "No data recorded yet";
+                        sensor.timestamp = "";
+                    }
+
+                    sensors.Add(sensor);
                 }
 
                 sensornode.sensors = sensors;
@@ -263,18 +279,12 @@ namespace Thesis.Controllers
 
                 String xmlfields = client.Custom("structure/" + dataname);
                 doc.LoadXml(xmlfields);
-                XmlNodeList fieldnodes = doc.DocumentElement.ChildNodes;
+                XmlNode sensortypenode = doc.DocumentElement;
 
-                foreach (XmlNode fieldnode in fieldnodes)
-                {
-                    if (fieldnode.Name != "timestamp" && fieldnode.Name != "utimestamp")
-                    {
-                        SelectListItem field = new SelectListItem();
-                        field.Text = fieldnode.Name;
-                        field.Value = id + "," + fieldnode.Name;
-                        fields.Add(field);
-                    }
-                }
+                SelectListItem field = new SelectListItem();
+                field.Text = sensortypenode.Name;
+                field.Value = id;
+                fields.Add(field);
             }
 
             return fields;
@@ -316,7 +326,7 @@ namespace Thesis.Controllers
                 )
             );
 
-            response = ContactWebService("/addNode/", postdata.ToString());
+            /*response = ContactWebService("http://192.168.1.6:8080/addNode/", postdata.ToString());*/
         }
 
         [HttpPost]
@@ -350,12 +360,14 @@ namespace Thesis.Controllers
             postdata = new XDocument(
                 new XElement("addSensor",
                     new XElement("sensorGroupID", sensorgroupID),
-                    new XElement("sensorID", sensorID),
-                    new XElement("sensorType", sensorType)
+                    new XElement("sensor",
+                        new XElement("sensorID", sensorID),
+                        new XElement("sensorType", sensorType)
+                    )
                 )
             );
 
-            response = ContactWebService("/addSensor/", postdata.ToString());
+            /*response = ContactWebService("http://192.168.1.6:8080/addSensor/", postdata.ToString());*/
         }
 
         [HttpPost]
@@ -402,13 +414,21 @@ namespace Thesis.Controllers
             IpsumClient client = new IpsumClient("http://ipsum.groept.be", "/", "ad37d673-8803-4497-99dc-97f6baf91d5e");
             client.Authenticate("mverhelst", "mverhelst");
 
-            String xmldata = client.Calculation(destination, postdata.ToString());
+            String xmldata = "";
+            Dictionary<String, String> datalist = new Dictionary<String, String>();
+            try
+            {
+                xmldata = client.Calculation(destination, postdata.ToString());
+            }
+            catch (WebException e)
+            {
+                JsonResult json = Json(datalist, JsonRequestBehavior.AllowGet);
+                return json;
+            }
 
             XmlDocument doc = new XmlDocument();
             doc.LoadXml(xmldata);
             XmlNodeList entries = doc.DocumentElement.ChildNodes;
-
-            Dictionary<String, String> datalist = new Dictionary<String, String>();
 
             foreach (XmlNode entry in entries)
             {
@@ -424,8 +444,8 @@ namespace Thesis.Controllers
                 }
             }
 
-            JsonResult json = Json(datalist, JsonRequestBehavior.AllowGet);
-            return json;
+            JsonResult result = Json(datalist, JsonRequestBehavior.AllowGet);
+            return result;
         }
 
         public void FetchDirectSensorData(int sensorGroupID, int sensorID)
@@ -437,7 +457,7 @@ namespace Thesis.Controllers
                 )
             );
 
-            String response = ContactWebService("/requestData/", postdata.ToString());
+            /*String response = ContactWebService("/requestData/", postdata.ToString());*/
         }
 
         public void ChangeFrequency(int sensorGroupID, int sensorID, int newFrequency)
@@ -450,7 +470,7 @@ namespace Thesis.Controllers
                 )
             );
 
-            String response = ContactWebService("/changeFrequency/", postdata.ToString());
+            /*String response = ContactWebService("/changeFrequency/", postdata.ToString());*/
         }
 
         public String ContactWebService(String url, String xml = null)
@@ -489,7 +509,7 @@ namespace Thesis.Controllers
             public String name { get; set; }
             public String location { get; set; }
             public String description { get; set; }
-            public List<IpsumSensor> sensors {get; set; }
+            public List<IpsumSensor> sensors { get; set; }
         }
 
         public class IpsumSensor
@@ -498,7 +518,9 @@ namespace Thesis.Controllers
             public String name { get; set; }
             public String description { get; set; }
             public int frequency { get; set; }
-            public Dictionary<String, String> field {get; set; }
+            public String type { get; set; }
+            public String lastvalue { get; set; }
+            public String timestamp { get; set; }
         }
     }
 }

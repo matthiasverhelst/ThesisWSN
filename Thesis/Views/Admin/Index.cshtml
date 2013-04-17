@@ -1,0 +1,22 @@
+﻿@{
+    ViewBag.Title = "Admin panel";
+}
+
+<h2>Index</h2>
+
+<ol class="round">
+    <li class="one">
+        <h5>@Html.ActionLink("Create a new network", "CreateNetwork")</h5>
+        Create a new network and add the groundplans for it to the database.
+    </li>
+
+    <li class="two">
+        <h5>@Html.ActionLink("Register user", "Register", "Account")</h5>
+        Register a new user for this web interface.
+    </li>
+
+    <li class="three">
+        <h5>@Html.ActionLink("Manage users", "Index", "Admin")</h5>
+        Manage the access rights for the different users.
+    </li>
+</ol>
