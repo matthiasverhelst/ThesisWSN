@@ -398,6 +398,9 @@ namespace Thesis.Controllers
 
         public JsonResult FetchSpecificData(int installationID, int sensorGroupID, int sensorID, String field, String start, String end)
         {
+            String startdatetime = start.Replace(" ", "T");
+            String enddatetime = end.Replace(" ", "T");
+
             XDocument postdata = new XDocument(
                 new XDeclaration("1.0", "utf-8", "yes"),
                 new XElement("get",

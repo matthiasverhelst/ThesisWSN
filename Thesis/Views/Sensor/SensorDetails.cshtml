@@ -6,8 +6,8 @@
 
 <form id="dataform">
     <h3>Enter sensor details</h3><br>
-    Start date and time (yyyy-mm-ddThh:mm:ss): <input type="text" name="startdate" id="startdate" /><br>
-    End date and time (yyyy-mm-ddThh:mm:ss): <input type="text" name="enddate" id="enddate" /><br>
+    Start date and time: <input type="text" name="startdate" id="startdate" /><br>
+    End date and time: <input type="text" name="enddate" id="enddate" /><br>
     Sensor field: @Html.DropDownList("field", (IEnumerable<SelectListItem>) ViewBag.sensorfields)<br>
     <input type="button" value="Get data" onclick="getData()" />
 </form>
@@ -15,9 +15,49 @@
 <div id="chart"></div>
 
 @section scripts {
+    @Scripts.Render("~/bundles/jqueryui")
+    <script type="text/javascript" src="~/Scripts/jquery-ui-timepicker-1.2.2.js"></script>
     <script type="text/javascript" src="https://www.google.com/jsapi"></script>
     <script type="text/javascript">
 
+        var startDateTime = $("#startdate");
+        var endDateTime = $("#enddate");
+
+        $("#startdate").datetimepicker({
+            showSecond: true,
+            dateFormat: "yy-mm-dd",
+            timeFormat: "HH:mm:ss",
+            onClose: function(dateText, inst) {
+                if (endDateTime.val() != '') {
+                    if (startDateTime.datetimepicker('getDate') > endDateTime.datetimepicker('getDate'))
+                        endDateTime.datetimepicker('setDate', startDateTime.datetimepicker('getDate'));
+                }
+                else {
+                    endDateTime.val(dateText);
+                }
+            },
+            onSelect: function (selectedDateTime){
+                endDateTime.datetimepicker('option', 'minDate', startDateTime.datetimepicker('getDate'));
+            }
+        });
+
+        $("#enddate").datetimepicker({
+            showSecond: true,
+            dateFormat: "yy-mm-dd",
+            timeFormat: "HH:mm:ss",
+            onClose: function (dateText, inst) {
+                if (startDateTime.val() != '') {
+                    if (startDateTime.datetimepicker('getDate') > endDateTime.datetimepicker('getDate'))
+                        startDateTime.datetimepicker('setDate', endDateTime.datetimepicker('getDate'));
+                }
+                else {
+                    startDateTime.val(dateText);
+                }
+            },
+            onSelect: function (selectedDateTime) {
+                startDateTime.datetimepicker('option', 'maxDate', endDateTime.datetimepicker('getDate'));
+            }
+        });
         google.load("visualization", "1", { packages: ["corechart"] });
 
         function getData() {
@@ -26,7 +66,7 @@
             var enddate = form.enddate.value;
 
             var id = form.field.value
-            var datafield = $("#field").text();
+            var datafield = $("#field option:selected").text();
 
             $.ajax({
                 url: '@Url.Action("FetchSpecificData")',
