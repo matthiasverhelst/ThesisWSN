@@ -306,6 +306,8 @@
     <Content Include="Views\Sensor\Delete.cshtml" />
     <Content Include="Views\Admin\CreateNetwork.cshtml" />
     <Content Include="Views\Admin\Index.cshtml" />
+    <Content Include="Views\Admin\ManageUsers.cshtml" />
+    <Content Include="Views\Admin\EditUser.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />

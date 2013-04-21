@@ -27,9 +27,12 @@
         If you don't have an account yet, contact one of our admins who are able to make one for you.
     </li>
 
-    <li class="three">
-        <h5>@Html.ActionLink("Admin panel", "Index", "Admin")</h5>
-        When logged in, you will have more access rights on this web interface.
-        If you don't have an account yet, contact one of our admins who are able to make one for you.
-    </li>
+    @if(User.IsInRole("Installer") || User.IsInRole("Admin"))
+    {
+        <li class="three">
+            <h5>@Html.ActionLink("Admin panel", "Index", "Admin")</h5>
+            When logged in, you will have more access rights on this web interface.
+            If you don't have an account yet, contact one of our admins who are able to make one for you.
+        </li>
+    }
 </ol>

@@ -1,0 +1,37 @@
+﻿@model Thesis.Models.UserProfile
+
+@{
+    ViewBag.Title = "Edit user";
+}
+
+<h2>Edit user</h2>
+<br />
+User name: @Html.DisplayFor(model => model.UserName)<br />
+Current role: @Html.DisplayName(Roles.GetRolesForUser(Model.UserName)[0])<br /><br />
+@{  
+    if (User.IsInRole("Installer"))
+    {
+        String[] roles = { "Installer", "Admin", "User" };
+    }
+    else
+    {
+        String[] roles = { "Admin", "User" };
+    }
+}
+New role: @Html.DropDownList("newRole", new SelectList(new[]
+                    {
+                        "Installer",
+                        "Admin",
+                        "User"
+                    }))
+<br />
+
+<button onclick="changeRole()">Change role</button>
+
+@section scripts {
+    <script type="text/javascript">
+
+
+
+    </script>
+}

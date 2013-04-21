@@ -1,0 +1,38 @@
+﻿@model IEnumerable<Thesis.Models.UserProfile>
+
+@{
+    ViewBag.Title = "Manage Users";
+}
+
+<h2>Manage Users</h2>
+
+<table>
+    <tr>
+        <th>
+            @Html.DisplayNameFor(model => model.UserName)
+        </th>
+        <th>
+            @Html.DisplayName("Role")
+        </th>
+    </tr>
+
+@foreach (var user in Model) {
+    <tr>
+        <td>
+            @Html.DisplayFor(modelItem => user.UserName)
+        </td>
+        <td>
+            @Html.DisplayName(Roles.GetRolesForUser(user.UserName)[0])
+        </td>
+        <td>
+            @if (!((Roles.GetRolesForUser(user.UserName)[0].Equals("Installer") || Roles.GetRolesForUser(user.UserName)[0].Equals("Admin")) && User.IsInRole("Admin")))
+            {
+                @Html.ActionLink("Edit", "EditUser", new { id=user.UserId })
+                @Html.ActionLink("Detailed access rights", "Details", new { id=user.UserId })
+                @Html.ActionLink("Delete", "DeleteUser", new { id=user.UserId })
+            }
+        </td>
+    </tr>
+}
+
+</table>

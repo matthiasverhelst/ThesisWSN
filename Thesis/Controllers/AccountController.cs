@@ -80,6 +80,7 @@ namespace Thesis.Controllers
                 try
                 {
                     WebSecurity.CreateUserAndAccount(model.UserName, model.Password);
+                    Roles.AddUserToRole(model.UserName, model.AccessRights);
                     WebSecurity.Login(model.UserName, model.Password);
                     return RedirectToAction("Index", "Home");
                 }
@@ -91,6 +92,17 @@ namespace Thesis.Controllers
 
             // If we got this far, something failed, redisplay form
             return View(model);
+        }
+
+        public String GetRole()
+        {
+            if(Roles.IsUserInRole("Installer"))
+                return "Installer";
+            else if (Roles.IsUserInRole("Admin"))
+                return "Admin";
+            else if (Roles.IsUserInRole("User"))
+                return "User";
+            return "Visitor";
         }
 
         //

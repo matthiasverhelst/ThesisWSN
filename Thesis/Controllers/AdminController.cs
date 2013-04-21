@@ -3,11 +3,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Web;
 using System.Web.Mvc;
+using Thesis.Models;
 
 namespace Thesis.Controllers
 {
+    [Authorize(Roles = "Installer, Admin")]
     public class AdminController : Controller
     {
+        private UsersContext db = new UsersContext();
+
         //
         // GET: /Admin/
 
@@ -16,12 +20,14 @@ namespace Thesis.Controllers
             return View();
         }
 
-        //
-        // GET: /Admin/Details/5
-
         public ActionResult CreateNetwork()
         {
             return View();
+        }
+
+        public ActionResult ManageUsers()
+        {
+            return View(db.UserProfiles.ToList());
         }
 
         //
@@ -51,11 +57,16 @@ namespace Thesis.Controllers
         }
 
         //
-        // GET: /Admin/Edit/5
+        // GET: /Admin/EditUser/5
 
-        public ActionResult Edit(int id)
+        public ActionResult EditUser(int id)
         {
-            return View();
+            UserProfile profile = db.UserProfiles.Find(id);
+            if (profile == null)
+            {
+                return HttpNotFound();
+            }
+            return View(profile);
         }
 
         //

@@ -8,6 +8,7 @@ using System.Net;
 using System.Text;
 using System.Web;
 using System.Web.Mvc;
+using System.Web.Security;
 using System.Xml;
 using System.Xml.Linq;
 using Thesis.Ipsum;
@@ -308,8 +309,8 @@ namespace Thesis.Controllers
                 )
             );
 
-            IpsumClient client = new IpsumClient("http://ipsum.groept.be", "/", "ad37d673-8803-4497-99dc-97f6baf91d5e");
-            client.Authenticate("mverhelst", "mverhelst");
+            IpsumClient client = new IpsumClient("http://ipsum.groept.be", "/", "a31dd4f1-9169-4475-b316-764e1e737653");
+            client.Authenticate("roel", "roel");
 
             String response = client.Custom("addGroup/{token}/{code}", postdata.Declaration.ToString() + postdata.ToString());
 
@@ -326,11 +327,11 @@ namespace Thesis.Controllers
                 )
             );
 
-            /*response = ContactWebService("http://192.168.1.6:8080/addNode/", postdata.ToString());*/
+            response = ContactWebService("/addNode/", postdata.ToString());
         }
 
         [HttpPost]
-        public void CreateSensor(int sensorgroupID, String name, int frequency, String description, String dataname, String sensorType)
+        public void CreateSensor(int installationID, int sensorgroupID, String name, int frequency, String description, String dataname, String sensorType)
         {
             XDocument postdata = new XDocument(
                 new XDeclaration("1.0", "utf-16", "yes"),
@@ -347,8 +348,8 @@ namespace Thesis.Controllers
                 )
             );
 
-            IpsumClient client = new IpsumClient("http://ipsum.groept.be", "/", "ad37d673-8803-4497-99dc-97f6baf91d5e");
-            client.Authenticate("mverhelst", "mverhelst");
+            IpsumClient client = new IpsumClient("http://ipsum.groept.be", "/", "a31dd4f1-9169-4475-b316-764e1e737653");
+            client.Authenticate("roel", "roel");
 
             String response = client.Custom("addSensor/{token}/{code}", postdata.ToString());
 
@@ -356,6 +357,11 @@ namespace Thesis.Controllers
             doc.LoadXml(response);
             XmlNode idNode = doc.DocumentElement.SelectSingleNode("//*[local-name()='id']");
             String sensorID = idNode.InnerText;
+
+            Destination sensorDest = new Destination(21, installationID, sensorgroupID, Convert.ToInt32(sensorID));
+            response = client.LoadDestination(sensorDest);
+
+            client.Custom("setUser/21:255/{token}/{code}", response);
 
             postdata = new XDocument(
                 new XElement("addSensor",
@@ -367,7 +373,7 @@ namespace Thesis.Controllers
                 )
             );
 
-            /*response = ContactWebService("http://192.168.1.6:8080/addSensor/", postdata.ToString());*/
+            response = ContactWebService("/addSensor/", postdata.ToString());
         }
 
         [HttpPost]
@@ -476,7 +482,7 @@ namespace Thesis.Controllers
         public String ContactWebService(String url, String xml = null)
         {
             // Create the web request  
-            HttpWebRequest request = WebRequest.Create(url) as HttpWebRequest;
+            HttpWebRequest request = WebRequest.Create("http://10.65.101.200:8080" + url) as HttpWebRequest;
             request.Timeout = 20000;
             if (xml == null)
                 request.Method = "GET";
