@@ -18,6 +18,7 @@ namespace Thesis.Controllers
 {
     public class SensorController : Controller
     {
+        private IpsumClient client = new IpsumClient("http://ipsum.groept.be", "/", "a31dd4f1-9169-4475-b316-764e1e737653");
 
         public ActionResult Index()
         {
@@ -69,69 +70,16 @@ namespace Thesis.Controllers
             return View();
         }
 
-        public ActionResult Create()
+        public void IpsumLogin()
         {
-            return View();
-        }
-        /*
-        [HttpPost]
-        public ActionResult Create(Sensor sensor)
-        {
-            if (ModelState.IsValid)
-            {
-                db.Sensors.Add(sensor);
-                db.SaveChanges();
-                return RedirectToAction("ModuleDetails");
-            }
-
-            return View(sensor);
-        }
-        
-        public ActionResult Edit(int id = 0)
-        {
-            Sensor sensor = db.Sensors.Find(id);
-            if (sensor == null)
-            {
-                return HttpNotFound();
-            }
-            return View(sensor);
-        }
-        
-        [HttpPost]
-        public ActionResult Edit(Sensor sensor)
-        {
-            if (ModelState.IsValid)
-            {
-                db.Entry(sensor).State = EntityState.Modified;
-                db.SaveChanges();
-                return RedirectToAction("ModuleDetails");
-            }
-            return View(sensor);
-        }
-        
-        public ActionResult Delete(int id = 0)
-        {
-            Sensor sensor = db.Sensors.Find(id);
-            if (sensor == null)
-            {
-                return HttpNotFound();
-            }
-            return View(sensor);
+            TimeSpan difference = DateTime.UtcNow - client.TokenExpire;
+            if (difference.TotalMinutes >= 30)
+                client.Authenticate("roel", "roel");
         }
 
-        [HttpPost, ActionName("Delete")]
-        public ActionResult DeleteConfirmed(int id)
-        {
-            Sensor sensor = db.Sensors.Find(id);
-            db.Sensors.Remove(sensor);
-            db.SaveChanges();
-            return RedirectToAction("ModuleDetails");
-        }
-        */
         public JsonResult FetchAllSensors(int installationID)
         {
-            IpsumClient client = new IpsumClient("http://ipsum.groept.be", "/", "ad37d673-8803-4497-99dc-97f6baf91d5e");
-            client.Authenticate("mverhelst", "mverhelst");
+            IpsumLogin();
 
             Destination installationdest = new Destination(21, installationID, 0, 0);
             String xmlChildNodes = client.LoadChildren(installationdest);
@@ -156,6 +104,9 @@ namespace Thesis.Controllers
 
                 XmlNode description = xmlsensornode.SelectSingleNode("./*[local-name()='description']");
                 sensornode.description = description.InnerText;
+
+                XmlNode inuse = xmlsensornode.SelectSingleNode("./*[local-name()='inuse']");
+                sensornode.inuse = Convert.ToBoolean(inuse.InnerText);
 
                 Destination sensorgroupdest = new Destination(21, installationID, sensornode.id, 0);
                 String xmlChildSensors = client.LoadChildren(sensorgroupdest);
@@ -230,8 +181,7 @@ namespace Thesis.Controllers
 
         public List<SelectListItem> FetchAllSensorTypes()
         {
-            IpsumClient client = new IpsumClient("http://ipsum.groept.be", "/", "ad37d673-8803-4497-99dc-97f6baf91d5e");
-            client.Authenticate("mverhelst", "mverhelst");
+            IpsumLogin();
 
             String xmlSensorTypes = client.Custom("objects/{token}/{code}");
 
@@ -248,11 +198,14 @@ namespace Thesis.Controllers
                 XmlDocument doc2 = new XmlDocument();
                 doc2.LoadXml(xmlSingleType);
                 XmlNode type = doc2.DocumentElement;
-                
-                SelectListItem element = new SelectListItem();
-                element.Text = type.Name;
-                element.Value = name.InnerText;
-                elements.Add(element);
+
+                if (type.Name.Contains("zigbee"))
+                {
+                    SelectListItem element = new SelectListItem();
+                    element.Text = type.Name;
+                    element.Value = name.InnerText;
+                    elements.Add(element);
+                }
             }
 
             return elements;
@@ -261,8 +214,7 @@ namespace Thesis.Controllers
         public List<SelectListItem> FetchSensorNodeFields(int installationid, int sensorgroupid)
         {
             Destination sensornodedest = new Destination(21, installationid, sensorgroupid, 0);
-            IpsumClient client = new IpsumClient("http://ipsum.groept.be", "/", "ad37d673-8803-4497-99dc-97f6baf91d5e");
-            client.Authenticate("mverhelst", "mverhelst");
+            IpsumLogin();
             String xmlsensors = client.LoadChildren(sensornodedest);
 
             XmlDocument doc = new XmlDocument();
@@ -309,8 +261,7 @@ namespace Thesis.Controllers
                 )
             );
 
-            IpsumClient client = new IpsumClient("http://ipsum.groept.be", "/", "a31dd4f1-9169-4475-b316-764e1e737653");
-            client.Authenticate("roel", "roel");
+            IpsumLogin();
 
             String response = client.Custom("addGroup/{token}/{code}", postdata.Declaration.ToString() + postdata.ToString());
 
@@ -327,7 +278,7 @@ namespace Thesis.Controllers
                 )
             );
 
-            response = ContactWebService("/addNode/", postdata.ToString());
+            /*response = ContactWebService("/addNode/", postdata.ToString());*/
         }
 
         [HttpPost]
@@ -348,8 +299,7 @@ namespace Thesis.Controllers
                 )
             );
 
-            IpsumClient client = new IpsumClient("http://ipsum.groept.be", "/", "a31dd4f1-9169-4475-b316-764e1e737653");
-            client.Authenticate("roel", "roel");
+            IpsumLogin();
 
             String response = client.Custom("addSensor/{token}/{code}", postdata.ToString());
 
@@ -373,7 +323,7 @@ namespace Thesis.Controllers
                 )
             );
 
-            response = ContactWebService("/addSensor/", postdata.ToString());
+            /*response = ContactWebService("/addSensor/", postdata.ToString());*/
         }
 
         [HttpPost]
@@ -420,8 +370,7 @@ namespace Thesis.Controllers
             );
 
             Destination destination = new Destination(21, installationID, sensorGroupID, sensorID);
-            IpsumClient client = new IpsumClient("http://ipsum.groept.be", "/", "ad37d673-8803-4497-99dc-97f6baf91d5e");
-            client.Authenticate("mverhelst", "mverhelst");
+            IpsumLogin();
 
             String xmldata = "";
             Dictionary<String, String> datalist = new Dictionary<String, String>();
@@ -474,8 +423,10 @@ namespace Thesis.Controllers
             XDocument postdata = new XDocument(
                 new XElement("changeFrequency",
                     new XElement("sensorGroupID", sensorGroupID),
-                    new XElement("sensor", sensorID),
-                    new XElement("frequency", newFrequency)
+                    new XElement("sensor",
+                        new XElement("sensorID", sensorID),
+                        new XElement("frequency", newFrequency)
+                    )
                 )
             );
 
@@ -518,6 +469,7 @@ namespace Thesis.Controllers
             public String name { get; set; }
             public String location { get; set; }
             public String description { get; set; }
+            public Boolean inuse { get; set; }
             public List<IpsumSensor> sensors { get; set; }
         }
 

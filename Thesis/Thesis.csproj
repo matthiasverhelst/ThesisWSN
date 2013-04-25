@@ -192,6 +192,7 @@
     <Content Include="Content\themes\base\jquery-ui.css" />
     <Content Include="favicon.ico" />
     <Content Include="Global.asax" />
+    <Content Include="Images\loading.gif" />
     <Content Include="Images\moduleImage.png" />
     <Content Include="Images\modules.jpg" />
     <Content Include="Images\testImage.png" />
@@ -203,6 +204,7 @@
     <Content Include="Images\Vesalius_5_2004-Model.svg" />
     <Content Include="Images\Vesalius_6_2004-Model.svg" />
     <Content Include="Images\Vesalius_7_2004-Model.svg" />
+    <Content Include="Scripts\modulecontrol.js" />
     <Content Include="Scripts\jquery-1.9.1.js" />
     <Content Include="Scripts\jquery-ui-1.10.2.js" />
     <Content Include="Scripts\jquery-ui-timepicker-1.2.2.js" />
@@ -249,8 +251,6 @@
     <Content Include="Views\Account\Register.cshtml" />
     <Content Include="Views\Account\ExternalLoginFailure.cshtml" />
     <Content Include="Views\Account\ExternalLoginConfirmation.cshtml" />
-    <Content Include="Views\Home\About.cshtml" />
-    <Content Include="Views\Home\Contact.cshtml" />
     <Content Include="Views\Home\Index.cshtml" />
     <Content Include="Views\Shared\Error.cshtml" />
     <Content Include="Views\Shared\_LoginPartial.cshtml" />
@@ -259,9 +259,6 @@
     <Content Include="Views\Sensor\Index.cshtml" />
     <Content Include="Views\Sensor\Module.cshtml" />
     <Content Include="Views\Sensor\SensorDetails.cshtml" />
-    <Content Include="Views\Sensor\Edit.cshtml" />
-    <Content Include="Views\Sensor\Create.cshtml" />
-    <Content Include="Views\Sensor\Delete.cshtml" />
     <Content Include="Views\Admin\CreateNetwork.cshtml" />
     <Content Include="Views\Admin\Index.cshtml" />
     <Content Include="Views\Admin\ManageUsers.cshtml" />

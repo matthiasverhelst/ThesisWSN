@@ -6,7 +6,7 @@
 
 <div class="sensordetails">
     <div id="addsensor">
-        Click on a sensor for its most recent information<br /><br />
+        Green: node in use, red: node not in use<br /><br />
         @if(User.IsInRole("Installer"))
         {
             <button onclick="createSensorNode()">Create new sensor node</button>
@@ -54,7 +54,16 @@
     </form>
 </div>
 
-
+<div id="changefrequencycontainer" class="createcontainer">
+    <form id="changefrequencyform" class="createform">
+        <h3>Enter the new frequency:</h3><br>
+        <input type="hidden" name="sensornodeid" id="sensornodeid" />
+        <input type="hidden" name="sensorid" id="sensorid" />
+        New frequency: <input type="number" min="10" step="10" value="60" name="frequency" id="newfrequency" /><br><br>
+        <input type="button" value="OK" onclick="changeFrequency()" />
+        <input type="button" value="Cancel" onclick="changeFrequency(this.value)" />
+    </form>
+</div>
 
 @section scripts {
     <script type="text/javascript" src="~/Scripts/raphael-min.js"></script>
@@ -90,7 +99,9 @@
             var loc = sensornode.location.split(",");
 
             var c = paper.circle(loc[0], loc[1], 5);
-            c.attr({ fill: "green" });
+            if (sensornode.inuse == true)
+                c.attr({ fill: "green" });
+            else c.attr({ fill: "red" });
             c.click(function () {
                 $("#sensordetails").css("display", "inline-block");
                 $("#sensordetails").html("<h2>Sensornode name: " + sensornode.name + "</h2><br>");
@@ -115,9 +126,12 @@
                         $("#sensordetails").append("<h3>Sensorname: " + sensor.name + "</h3><br>");
                         $("#sensordetails").append("Sensor ID: " + sensor.id + "<br>");
                         $("#sensordetails").append("Description: " + sensor.description + "<br>");
+                        $("#sensordetails").append("Frequency: " + sensor.frequency + "<br>");
                         $("#sensordetails").append(sensor.type + ": " + sensor.lastvalue + "<br>");
                         if (!(sensor.timestamp == ""))
                             $("#sensordetails").append("Timestamp: " + sensor.timestamp + "<br>");
+                        if (role == "Installer" || role == "Admin")
+                            $("#sensordetails").append('<button onclick="promptForFrequency(' + sensornode.id + ', ' + sensor.id + ')">Change frequency</button><br>');
                     });
                 }
             });
@@ -136,6 +150,7 @@
             a.click(getpos);
         }
 
+        //TODO clean up of these ugly methods!
         function createSensor(sensorgroupid) {
             $('#createtypeform').css("display", "none");
             $("#createtypecontainer").css("z-index", "-1");
@@ -147,7 +162,6 @@
         }
 
         function createType() {
-            a.unclick(getpos);
             $("#typename").val("");
             $("#typefield").val("");
             $('#createsensorform').css("display", "none");
@@ -155,7 +169,7 @@
             $('#createsensornodeform').css("display", "none");
             $("#createsensornodecontainer").css("z-index", "-1");
             $("#createtypecontainer").css("z-index", "1000");
-            $('#createtypeform').css("display", "block");
+            $("#createtypeform").css("display", "block");
         }
 
 
@@ -164,12 +178,25 @@
             $("#sensornodename").val("");
             $("#sensordescription").val("");
             $("#createsensornodecontainer").css("z-index", "1000");
-            $('#createsensornodeform').css("display", "block");
+            $("#createsensornodeform").css("display", "block");
+        }
+
+        function promptForFrequency(sensornodeid, sensorid) {
+            $("#createtypeform").css("display", "none");
+            $("#createtypecontainer").css("z-index", "-1");
+            $("#createsensorform").css("display", "none");
+            $("#createsensorcontainer").css("z-index", "-1");
+            $("#createsensornodeform").css("display", "none");
+            $("#createsensornodecontainer").css("z-index", "-1");
+            $("#changefrequencycontainer").css("z-index", "1000");
+            $("#changefrequencyform").css("display", "block");
+            $("#sensornodeid").val(sensornodeid);
+            $("#sensorid").val(sensorid);
         }
 
         function makeSensorNode(arg) {
             if("Cancel" == arg) {
-                $('#createsensornodeform').css("display", "none");
+                $("#createsensornodeform").css("display", "none");
                 $("#createsensornodecontainer").css("z-index", "-1");
                 return;
             }
@@ -179,7 +206,7 @@
                 var sensorlocation = form.location.value;
                 var sensorzigbeeaddress = form.zigbeeaddress.value
                 var sensordescription = form.description.value;
-                $('#createsensornodeform').css("display", "none");
+                $("#createsensornodeform").css("display", "none");
                 $("#createsensornodecontainer").css("z-index", "-1");
 
                 $.ajax({
@@ -189,6 +216,7 @@
                     cache: false,
                     success: function () {
                         alert("Sensornode made successfully!");
+                        location.reload();
                     }
                 });
             }
@@ -196,7 +224,7 @@
 
         function makeSensor(arg) {
             if ("Cancel" == arg) {
-                $('#createsensorform').css("display", "none");
+                $("#createsensorform").css("display", "none");
                 $("#createsensorcontainer").css("z-index", "-1");
                 return;
             }
@@ -208,7 +236,7 @@
                 var sensordescription = form.description.value;
                 var sensordataname = form.sensortype.value;
                 var sensortype = $("#sensortype option:selected").text();
-                $('#createsensorform').css("display", "none");
+                $("#createsensorform").css("display", "none");
                 $("#createsensorcontainer").css("z-index", "-1");
 
                 $.ajax({
@@ -218,6 +246,7 @@
                     cache: false,
                     success: function () {
                         alert("Sensor made successfully!");
+                        location.reload();
                     }
                 });
             }
@@ -225,7 +254,7 @@
 
         function makeType(arg) {
             if ("Cancel" == arg) {
-                $('#createtypeform').css("display", "none");
+                $("#createtypeform").css("display", "none");
                 $("#createtypecontainer").css("z-index", "-1");
                 return;
             }
@@ -243,6 +272,34 @@
                     cache: false,
                     success: function () {
                         alert("Sensor type made successfully!");
+                        location.reload();
+                    }
+                });
+            }
+        }
+
+        function changeFrequency(arg) {
+            if ("Cancel" == arg) {
+                $("#changefrequencyform").css("display", "none");
+                $("#changefrequencycontainer").css("z-index", "-1");
+                return;
+            }
+            else {
+                var form = document.getElementById("changefrequencyform");
+                var nodeid = parseInt(form.sensornodeid.value);
+                var id = parseInt(form.sensorid.value);
+                var newfrequency = parseInt(form.frequency.value);
+                $("#changefrequencyform").css("display", "none");
+                $("#changefrequencycontainer").css("z-index", "-1");
+
+                $.ajax({
+                    url: '@Url.Action("ChangeFrequency")',
+                    type: 'POST',
+                    data: { sensorGroupID: nodeid, sensorID: id, newFrequency: newfrequency },
+                    cache: false,
+                    success: function () {
+                        alert("Frequency successfully changed!");
+                        location.reload();
                     }
                 });
             }
